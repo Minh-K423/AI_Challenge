@@ -1,39 +1,90 @@
-import numpy as np
-import json
 import os
-import uuid
+import json
+import numpy as np
+import uuid 
 
-def explore_data(npy_path, json_path):
+
+def data_availability(npy_path, json_path):
     print("="*50)
-    print(f" Exploring data:... ")
+    print(f" EXPLORING DATA ")
     print("="*50)
 
     if os.path.exists(npy_path):
+        npy_existence = True
         features = np.load(npy_path)
-        print(f"\n[+] File NPY: {npy_path}")
+        print(f"\n[+] NPY file: {npy_path}")
         print(f"    -> Data type: {features.dtype}")
-        print(f"    -> Size and the matrix: {features.shape}")
+        print(f"    -> Matrix Shape: {features.shape}")
     else:
-        print(f"\n[-] Couldn't find {npy_path}")
+        npy_existence = False
+        print(f"\n[-] Not found: {npy_path}")
 
     if os.path.exists(json_path):
+        json_existence = True
         with open(json_path, 'r', encoding='utf-8') as f:
             metadata = json.load(f)
         
-        print(f"\n[+] File JSON: {json_path}")
-        print(f"    -> Keys available: {list(metadata.keys())}")
- 
+        print(f"\n[+] JSON file: {json_path}")
+        print(f"    -> Available fields (Keys): {list(metadata.keys())}")
+        
         if 'description' in metadata:
-            print(f"    -> Preview Description: {metadata['description'][:100]}...")
+            print(f"    -> Description Preview: {metadata['description'][:100]}...")
     else:
-        print(f"\n[-] Couldn't find {json_path}")
+        json_existence = False
+        print(f"\n[-] Not found: {json_path}")
+
+    if (npy_existence and json_existence):
+        return True
+    else:
+        return False
 
 
-def build_points_from_videos(npy_path, json_path):
-    print("Hello world")
+def generate_point(npy_path, json_path):
+    video_name = os.path.splitext(os.path.basename(npy_path))[0]
+    metadata = {}
 
-if __name__ == "__main__":
+    with open(json_path, 'r', encoding='utf-8') as f:
+        metadata = json.load(f)
+
+    title = metadata.get("title", "No available key")
+    description = metadata.get("description", "No available key")
+
+    points_to_upload = []
+
+    video_features = np.load(npy_path)
+    num_frames = video_features.shape[0]
+
+    for frame_index in range(num_frames):
+        frame_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{video_name}_{frame_index}"))
+
+        vector = video_features[frame_index].tolist() #Cause Qdrant do not support numpy array, we need to convert it to list
+
+        payload = {
+            "video_name": video_name,
+            "frame_index": frame_index,
+            "title": title,
+            "description": description
+        }
+
+        point = {
+            "id": frame_id,
+            "vector": vector,
+            "payload": payload
+        }
+
+        points_to_upload.append(point)
+
+    return points_to_upload
+
+
+
+def main():
     sample_npy = "L01_V001.npy" 
     sample_json = "L01_V001.json"
     
-    explore_data(sample_npy, sample_json)
+    if data_availability(sample_npy, sample_json):
+        points = generate_point(sample_npy, sample_json)
+
+
+if __name__ == "__main__":
+    main()
