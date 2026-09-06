@@ -1,6 +1,9 @@
 import os
 import json
 import numpy as np
+from qdrant_client.models import PointStruct
+
+import pathlib
 import uuid 
 
 
@@ -61,30 +64,69 @@ def generate_point(npy_path, json_path):
 
         payload = {
             "video_name": video_name,
-            "frame_index": frame_index,
+            "frame_index": frame_index+1, # Store frame index starting from 1, because the first frame is 1, not 0 despite Qdrant using 0-based indexing
             "title": title,
             "description": description
         }
 
-        point = {
-            "id": frame_id,
-            "vector": vector,
-            "payload": payload
-        }
+        point = PointStruct(id=frame_id, vector=vector, payload=payload)
 
         points_to_upload.append(point)
 
     return points_to_upload
 
 
+def check_metadata(json_dir_path):
+
+    json_dir = pathlib.Path(json_dir_path)
+    
+    for json_file in json_dir.glob("*.json"):
+
+        if not json_file.is_file():
+            continue
+
+        with open(json_file, 'r', encoding='utf-8') as f:
+            metadata = json.load(f)
+
+        title = metadata.get("title", "No available key")
+        description = metadata.get("description", "No available key")
+
+        if "quân" in title.lower() or "quân" in description.lower():
+            print(f"Found 'quân': {json_file.stem} Title: {title}, Description: {description}")
+
+
 
 def main():
-    sample_npy = "L01_V001.npy" 
-    sample_json = "L01_V001.json"
+    npy_dir_path = "/mnt/Shared_data/Data/clip-features-32-aic25-b1/clip-features-32"
+    json_dir_path = "/mnt/Shared_data/Data/media-info-aic25-b1/media-info"
+
+    if not os.path.exists(npy_dir_path) or not os.path.exists(json_dir_path):
+        print("[-] One or both of the specified directories do not exist.")
+        return
     
-    if data_availability(sample_npy, sample_json):
-        points = generate_point(sample_npy, sample_json)
+    ''' 
 
+    npy_dir = pathlib.Path(npy_dir_path)
+    json_dir = pathlib.Path(json_dir_path)
 
+    for npy_file in npy_dir.glob("*.npy"):
+
+        if not npy_file.is_file():
+            continue
+
+        json_file = json_dir / (npy_file.stem + ".json")
+        if not json_file.is_file():
+            print(f"[-] Corresponding JSON file not found for: {npy_file.name}")
+            continue
+
+        if data_availability(npy_file, json_file):
+            points = generate_point(npy_file, json_file)
+            print(f"\n[+] Generated {len(points)} points for video: {npy_file.stem}")
+        else:
+            print(f"[-] Data not available for video: {npy_file.stem}")
+    '''
+    check_metadata(json_dir_path)
+
+        
 if __name__ == "__main__":
     main()

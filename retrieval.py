@@ -29,7 +29,9 @@ def main():
 
     results = []
 
-    for i in range(len(feat.pooler_output)):
+    print(query_vector)
+
+    '''for i in range(len(feat.pooler_output)):
         results.append({"similarity": F.cosine_similarity(feat.pooler_output[i:i+1], query_vector.pooler_output).item(),
                       "image": "Image " + str(i+1)})
     
@@ -38,7 +40,7 @@ def main():
         try:
             print(f"Top {i+1}: {top_k_results[i]["image"]} with the similarity of {top_k_results[i]["similarity"]}")
         except IndexError: 
-            print(f"Top {i+1}: None")
+            print(f"Top {i+1}: None")'''
 
 if __name__ == "__main__":
     main()
