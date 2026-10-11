@@ -27,7 +27,7 @@ def process_query(query: str):
             input_ids=processed_query.input_ids,
             attention_mask=processed_query.attention_mask,
         )
-        unnormed_query_vector = output.pooler_output[0].numpy()
+        unnormed_query_vector = output.pooler_output[0].numpy() 
         normalized_query_vector = unnormed_query_vector / np.linalg.norm(unnormed_query_vector)  # Normalize the query vector
         query_vector = normalized_query_vector.tolist()  # Convert to list for Qdrant  
 
@@ -58,7 +58,11 @@ def main():
     image_paths = []
 
     print("\nTop 6 search results:")
+
     for i, result in enumerate(search_results):
+
+        assert result.payload is not None
+        
         video_name = result.payload.get("video_name", "Unknown")
         frame_index = result.payload.get("frame_index", "Unknown")
         title = result.payload.get("title", "No available key")
@@ -73,6 +77,7 @@ def main():
             image_path = pathlib.Path("/mnt/Shared_data/Data") / f"Keyframes_{video_name[0:3]}" / "keyframes" / video_name / f"{frame_index:03d}.jpg" #The / operator has higher level of priority compared to + operator so image_path = pathlib.Path("/mnt/Shared_data/Data") / "Keyframes" + video_name[0:3] / "keyframes" / video_name / f"{frame_index:03d}" + ".jpg"  would be wrong, so either change to f"..." or wrap them into (...)
     
         image_paths.append(image_path)
+
     
     display_images(image_paths)
 
